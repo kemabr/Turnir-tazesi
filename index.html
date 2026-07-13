@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUBG Turnuvasy 2026</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-animation">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="logo">
+                <span class="logo-icon">🎮</span>
+                <div class="logo-text">
+                    <h1>PUBG TURNUVASY</h1>
+                    <p>Season 6 - 2026</p>
+                </div>
+            </div>
+            <div class="prize-badge">
+                <span>🏆</span>
+                <div>
+                    <small>Baýrak</small>
+                    <strong>500 M</strong>
+                </div>
+            </div>
+        </header>
+
+        <!-- Katılımcı Sayacı -->
+        <section class="counter-section">
+            <div class="counter-header">
+                <div>
+                    <span class="counter-label">KATYLYJY SANY</span>
+                    <div class="counter-value">
+                        <span id="current-count">{{ stats.toplam }}</span>
+                        <span class="counter-total">/ 100</span>
+                    </div>
+                </div>
+                <div class="counter-remaining">
+                    <span class="counter-label">GALAN YER</span>
+                    <div class="counter-value-remaining" id="remaining-count">{{ 100 - stats.toplam }}</div>
+                </div>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar" style="width: {{ (stats.toplam / 100) * 100 }}%"></div>
+            </div>
+            <div class="counter-alert" id="counter-alert">
+                {% if stats.toplam >= 100 %}
+                    ⚡ TURNIR BAŞLADY! Ähli ýerler doldy!
+                {% else %}
+                    ⚡ 100 katylyja ýetende turnir başlar! Galan: {{ 100 - stats.toplam }} yer
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Turnuva Bilgileri -->
+        <section class="info-section">
+            <h2 class="section-title">📅 Turnira Maglumatlary</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <span class="info-icon">📆</span>
+                    <div class="info-content">
+                        <span class="info-label">Senesi</span>
+                        <span class="info-value">25 Iýul 2026</span>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <span class="info-icon">🕐</span>
+                    <div class="info-content">
+                        <span class="info-label">Wagty</span>
+                        <span class="info-value">20:00 (TM)</span>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <span class="info-icon">🗺️</span>
+                    <div class="info-content">
+                        <span class="info-label">Karta</span>
+                        <span class="info-value">Erangel</span>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <span class="info-icon">👤</span>
+                    <div class="info-content">
+                        <span class="info-label">Gatnaşyk</span>
+                        <span class="info-value">Squad (4 kişi)</span>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <span class="info-icon">💵</span>
+                    <div class="info-content">
+                        <span class="info-label">Töleg</span>
+                        <span class="info-value highlight">5 Manat</span>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <span class="info-icon">📱</span>
+                    <div class="info-content">
+                        <span class="info-label">Töleg usuly</span>
+                        <span class="info-value">TMCell SMS</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ödüller -->
+        <section class="prizes-section">
+            <h2 class="section-title">🏆 Baýraklar</h2>
+            <div class="prizes-grid">
+                <div class="prize-card gold">
+                    <div class="prize-rank">🥇</div>
+                    <div class="prize-info">
+                        <h3>1-nji Orun</h3>
+                        <p class="prize-amount">300 Manat</p>
+                        <p class="prize-bonus">+ 🏆 Kubok</p>
+                    </div>
+                </div>
+                <div class="prize-card silver">
+                    <div class="prize-rank">🥈</div>
+                    <div class="prize-info">
+                        <h3>2-nji Orun</h3>
+                        <p class="prize-amount">150 Manat</p>
+                    </div>
+                </div>
+                <div class="prize-card bronze">
+                    <div class="prize-rank">🥉</div>
+                    <div class="prize-info">
+                        <h3>3-nji Orun</h3>
+                        <p class="prize-amount">50 Manat</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Kurallar -->
+        <section class="rules-section">
+            <h2 class="section-title">📋 Düzgünler</h2>
+            <div class="rules-list">
+                <div class="rule-item">
+                    <span class="rule-number">1</span>
+                    <p>Gatnaşyk tölegi 5 Manat (TMCell 0804 arkaly)</p>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-number">2</span>
+                    <p>Her topar 4 kişiden ybarat bolmaly</p>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-number">3</span>
+                    <p>Emulator we mobil oýunçylar aýratyn kategoriyada</p>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-number">4</span>
+                    <p>Hile we 3-nji tarap programmalar gadagan</p>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-number">5</span>
+                    <p>Turnir wagtynda çykan oýunçylar diskwalifisasiýa ediler</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dostunu Çağır -->
+        <section class="invite-section">
+            <div class="invite-card">
+                <h3>👥 Dostuňy Çagyr</h3>
+                <p>Dostlaryňy çagyryp, bile topar düz! Topar arkaly gatnaşyk has güýçli.</p>
+                <button class="btn-invite" onclick="shareSite()">
+                    <span>🔗</span> Linki Paylaş
+                </button>
+            </div>
+        </section>
+
+        <!-- CTA Buttons -->
+        <section class="cta-section">
+            <a href="/kayit" class="btn-primary">
+                📝 KAYIT OL
+            </a>
+            <button class="btn-secondary" onclick="showProfileModal()">
+                🔑 Profilim (Referans Kody)
+            </button>
+        </section>
+
+        <!-- Footer -->
+        <footer class="main-footer">
+            <p>© 2026 PUBG Turnuvasy | Ähli hukuklar goralan</p>
+            <p class="footer-location">📍 Türkmenistan</p>
+        </footer>
+    </div>
+
+    <!-- Profil Modal -->
+    <div class="modal" id="profile-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔑 Profilim</h3>
+                <button class="modal-close" onclick="closeProfileModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Referans kodyňyzy giriziň:</p>
+                <input type="text" id="profile-ref-code" placeholder="Mysal: PUBG-7X9K2M" class="modal-input">
+                <button class="btn-primary" onclick="goToProfile()" style="margin-top: 15px;">
+                    Profili Aç
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function shareSite() {
+            const shareData = {
+                title: 'PUBG Turnuvasy 2026',
+                text: '🎮 PUBG Turnuvasy-na gatnaş! 500 Manat baýrak, 5 Manat gatnaşyk tölegi. Men hem gatnaşjak!',
+                url: window.location.href
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData);
+            } else {
+                navigator.clipboard.writeText(shareData.text + ' ' + shareData.url).then(() => {
+                    alert('Link nusga alyndy! Dostlaryňa ugrat.');
+                });
+            }
+        }
+
+        function showProfileModal() {
+            document.getElementById('profile-modal').style.display = 'flex';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').style.display = 'none';
+        }
+
+        function goToProfile() {
+            const code = document.getElementById('profile-ref-code').value.trim();
+            if (code) {
+                window.location.href = '/profil/' + code;
+            } else {
+                alert('Referans kody giriziň!');
+            }
+        }
+
+        // Modal dışına tıklayınca kapat
+        document.getElementById('profile-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeProfileModal();
+        });
+    </script>
+</body>
+</html>

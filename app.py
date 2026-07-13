@@ -1,0 +1,451 @@
+import os
+import random
+import string
+import sqlite3
+from datetime import datetime
+from flask import Flask, render_template, request, jsonify, redirect, url_for, g
+import requests
+
+app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'pubg-turnuva-gizli-anahtar-2026')
+
+# Telegram Bot ayarlary
+BOT_TOKEN = os.environ.get('BOT_TOKEN', '')
+CHAT_ID = os.environ.get('CHAT_ID', '')
+
+# Veritabany yoly
+DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'turnuva.db')
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+        db.row_factory = sqlite3.Row
+    return db
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
+def init_db():
+    with app.app_context():
+        db = get_db()
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS katilimcilar (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                referans_kodu TEXT UNIQUE NOT NULL,
+                ad TEXT NOT NULL,
+                pubg_id TEXT NOT NULL,
+                telefon TEXT NOT NULL,
+                ulasim TEXT NOT NULL,
+                takim_kodu TEXT,
+                takim_lideri INTEGER DEFAULT 0,
+                odeme_durumu INTEGER DEFAULT 0,
+                admin_onay INTEGER DEFAULT 0,
+                kayit_tarihi TEXT NOT NULL,
+                odeme_tarihi TEXT,
+                onay_tarihi TEXT
+            )
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS takimlar (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                takim_kodu TEXT UNIQUE NOT NULL,
+                takim_adi TEXT,
+                lider_referans TEXT NOT NULL,
+                uye1_referans TEXT,
+                uye2_referans TEXT,
+                uye3_referans TEXT,
+                durum INTEGER DEFAULT 0
+            )
+        """)
+        db.commit()
+
+def generate_ref_code():
+    while True:
+        code = 'PUBG-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        db = get_db()
+        existing = db.execute('SELECT 1 FROM katilimcilar WHERE referans_kodu = ?', (code,)).fetchone()
+        if not existing:
+            return code
+
+def send_telegram_message(message):
+    if not BOT_TOKEN or not CHAT_ID:
+        return False
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload = {
+        'chat_id': CHAT_ID,
+        'text': message,
+        'parse_mode': 'HTML'
+    }
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        return response.status_code == 200
+    except:
+        return False
+
+def get_stats():
+    db = get_db()
+    stats = db.execute("""
+        SELECT 
+            COUNT(*) as toplam,
+            SUM(CASE WHEN odeme_durumu = 1 THEN 1 ELSE 0 END) as odeme_yapan,
+            SUM(CASE WHEN admin_onay = 1 THEN 1 ELSE 0 END) as onaylanan
+        FROM katilimcilar
+    """).fetchone()
+    return {
+        'toplam': stats['toplam'] or 0,
+        'odeme_yapan': stats['odeme_yapan'] or 0,
+        'onaylanan': stats['onaylanan'] or 0
+    }
+
+# ===================== ROUTES =====================
+
+@app.route('/')
+def index():
+    stats = get_stats()
+    return render_template('index.html', stats=stats)
+
+@app.route('/kayit')
+def kayit():
+    return render_template('kayit.html')
+
+@app.route('/api/kayit-ol', methods=['POST'])
+def api_kayit_ol():
+    data = request.get_json()
+
+    ad = data.get('ad', '').strip()
+    pubg_id = data.get('pubg_id', '').strip()
+    telefon = data.get('telefon', '').strip()
+    ulasim = data.get('ulasim', '').strip()
+
+    if not all([ad, pubg_id, telefon, ulasim]):
+        return jsonify({'success': False, 'message': 'Ahli maglumatlary dolduryň!'})
+
+    ref_code = generate_ref_code()
+    kayit_tarihi = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    db = get_db()
+    db.execute("""
+        INSERT INTO katilimcilar (referans_kodu, ad, pubg_id, telefon, ulasim, kayit_tarihi)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (ref_code, ad, pubg_id, telefon, ulasim, kayit_tarihi))
+    db.commit()
+
+    msg = f"""🎮 <b>TÄZE KATYLYJY!</b>
+
+👤 Ady: <b>{ad}</b>
+🆔 PUBG ID: <code>{pubg_id}</code>
+📞 Telefon: <code>{telefon}</code>
+💬 Ulaşmak: {ulasim}
+🔑 Referans kody: <code>{ref_code}</code>
+📅 Sene: {kayit_tarihi}
+
+⏳ <b>Töleg garaşylýar...</b>"""
+
+    send_telegram_message(msg)
+
+    return jsonify({
+        'success': True,
+        'referans_kodu': ref_code,
+        'message': 'Ustunlikli hasaba alyndyňyz!'
+    })
+
+@app.route('/odeme/<ref_code>')
+def odeme(ref_code):
+    db = get_db()
+    katilimci = db.execute(
+        'SELECT * FROM katilimcilar WHERE referans_kodu = ?', (ref_code,)
+    ).fetchone()
+
+    if not katilimci:
+        return redirect(url_for('index'))
+
+    return render_template('odeme.html', katilimci=katilimci)
+
+@app.route('/api/odeme-yapildi', methods=['POST'])
+def api_odeme_yapildi():
+    data = request.get_json()
+    ref_code = data.get('referans_kodu', '')
+
+    db = get_db()
+    katilimci = db.execute(
+        'SELECT * FROM katilimcilar WHERE referans_kodu = ?', (ref_code,)
+    ).fetchone()
+
+    if not katilimci:
+        return jsonify({'success': False, 'message': 'Katylyjy tapylmady!'})
+
+    odeme_tarihi = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    db.execute("""
+        UPDATE katilimcilar SET odeme_durumu = 1, odeme_tarihi = ? WHERE referans_kodu = ?
+    """, (odeme_tarihi, ref_code))
+    db.commit()
+
+    msg = f"""💰 <b>TÖLEG BILDIRIMI!</b>
+
+👤 Ady: <b>{katilimci['ad']}</b>
+🔑 Referans kody: <code>{ref_code}</code>
+📞 Telefon: <code>{katilimci['telefon']}</code>
+📅 Töleg senesi: {odeme_tarihi}
+
+✅ <b>Admin tassyklamasy garaşylýar!</b>"""
+
+    send_telegram_message(msg)
+
+    return jsonify({
+        'success': True,
+        'message': 'Töleg bildirimi ugradyldy! Admin tassyklamasy garaşylýar.'
+    })
+
+@app.route('/profil/<ref_code>')
+def profil(ref_code):
+    db = get_db()
+    katilimci = db.execute("""
+        SELECT k.*, t.takim_adi, t.takim_kodu as t_kod
+        FROM katilimcilar k
+        LEFT JOIN takimlar t ON k.takim_kodu = t.takim_kodu
+        WHERE k.referans_kodu = ?
+    """, (ref_code,)).fetchone()
+
+    if not katilimci:
+        return redirect(url_for('index'))
+
+    takim_arkadaslari = []
+    if katilimci['takim_kodu']:
+        takim_arkadaslari = db.execute("""
+            SELECT ad, pubg_id, referans_kodu, admin_onay 
+            FROM katilimcilar 
+            WHERE takim_kodu = ? AND referans_kodu != ?
+        """, (katilimci['takim_kodu'], ref_code)).fetchall()
+
+    return render_template('profil.html', katilimci=katilimci, takim_arkadaslari=takim_arkadaslari)
+
+@app.route('/takim/<ref_code>')
+def takim(ref_code):
+    db = get_db()
+    katilimci = db.execute(
+        'SELECT * FROM katilimcilar WHERE referans_kodu = ?', (ref_code,)
+    ).fetchone()
+
+    if not katilimci:
+        return redirect(url_for('index'))
+
+    return render_template('takim.html', katilimci=katilimci)
+
+@app.route('/api/takim-olustur', methods=['POST'])
+def api_takim_olustur():
+    data = request.get_json()
+    lider_ref = data.get('lider_ref', '')
+    takim_adi = data.get('takim_adi', '').strip()
+
+    db = get_db()
+    lider = db.execute(
+        'SELECT * FROM katilimcilar WHERE referans_kodu = ?', (lider_ref,)
+    ).fetchone()
+
+    if not lider:
+        return jsonify({'success': False, 'message': 'Katylyjy tapylmady!'})
+
+    if lider['takim_kodu']:
+        return jsonify({'success': False, 'message': 'Siz eyyam topar bolduňyz!'})
+
+    takim_kodu = 'TEAM-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+
+    db.execute("""
+        INSERT INTO takimlar (takim_kodu, takim_adi, lider_referans)
+        VALUES (?, ?, ?)
+    """, (takim_kodu, takim_adi, lider_ref))
+
+    db.execute("""
+        UPDATE katilimcilar SET takim_kodu = ?, takim_lideri = 1 WHERE referans_kodu = ?
+    """, (takim_kodu, lider_ref))
+    db.commit()
+
+    return jsonify({
+        'success': True,
+        'takim_kodu': takim_kodu,
+        'message': 'Topar ustunlikli doredildi!'
+    })
+
+@app.route('/api/takima-katil', methods=['POST'])
+def api_takima_katil():
+    data = request.get_json()
+    uye_ref = data.get('uye_ref', '')
+    takim_kodu = data.get('takim_kodu', '').strip().upper()
+
+    db = get_db()
+    uye = db.execute(
+        'SELECT * FROM katilimcilar WHERE referans_kodu = ?', (uye_ref,)
+    ).fetchone()
+
+    if not uye:
+        return jsonify({'success': False, 'message': 'Katylyjy tapylmady!'})
+
+    if uye['takim_kodu']:
+        return jsonify({'success': False, 'message': 'Siz eyyam topar bolduňyz!'})
+
+    takim = db.execute(
+        'SELECT * FROM takimlar WHERE takim_kodu = ?', (takim_kodu,)
+    ).fetchone()
+
+    if not takim:
+        return jsonify({'success': False, 'message': 'Topar kody nadogry!'})
+
+    uye_sayisi = db.execute(
+        'SELECT COUNT(*) as say FROM katilimcilar WHERE takim_kodu = ?', (takim_kodu,)
+    ).fetchone()['say']
+
+    if uye_sayisi >= 4:
+        return jsonify({'success': False, 'message': 'Bu topar eyyam doly (4 kisi)!'})
+
+    db.execute("""
+        UPDATE katilimcilar SET takim_kodu = ? WHERE referans_kodu = ?
+    """, (takim_kodu, uye_ref))
+
+    if not takim['uye1_referans']:
+        db.execute('UPDATE takimlar SET uye1_referans = ? WHERE takim_kodu = ?', (uye_ref, takim_kodu))
+    elif not takim['uye2_referans']:
+        db.execute('UPDATE takimlar SET uye2_referans = ? WHERE takim_kodu = ?', (uye_ref, takim_kodu))
+    elif not takim['uye3_referans']:
+        db.execute('UPDATE takimlar SET uye3_referans = ? WHERE takim_kodu = ?', (uye_ref, takim_kodu))
+
+    db.commit()
+
+    lider = db.execute(
+        'SELECT * FROM katilimcilar WHERE referans_kodu = ?', (takim['lider_referans'],)
+    ).fetchone()
+
+    msg = f"""👥 <b>TOPARA TÄZE AGZA!</b>
+
+Topar: <b>{takim['takim_adi']}</b>
+Kody: <code>{takim_kodu}</code>
+
+Taze agza: <b>{uye['ad']}</b>
+PUBG ID: <code>{uye['pubg_id']}</code>
+
+Topardaky agza sany: {uye_sayisi + 1}/4"""
+
+    send_telegram_message(msg)
+
+    return jsonify({
+        'success': True,
+        'message': f'Topara ustunlikli gosuldyňyz! ({uye_sayisi + 1}/4)'
+    })
+
+# ===================== ADMIN PANEL =====================
+
+@app.route('/admin')
+def admin_login():
+    return render_template('admin_login.html')
+
+@app.route('/admin/panel')
+def admin_panel():
+    sifre = request.args.get('sifre', '')
+    admin_sifre = os.environ.get('ADMIN_SIFRE', 'admin123')
+
+    if sifre != admin_sifre:
+        return redirect(url_for('admin_login'))
+
+    db = get_db()
+
+    stats = db.execute("""
+        SELECT 
+            COUNT(*) as toplam,
+            SUM(CASE WHEN odeme_durumu = 1 THEN 1 ELSE 0 END) as odeme_yapan,
+            SUM(CASE WHEN admin_onay = 1 THEN 1 ELSE 0 END) as onaylanan
+        FROM katilimcilar
+    """).fetchone()
+
+    katilimcilar = db.execute("""
+        SELECT k.*, t.takim_adi 
+        FROM katilimcilar k
+        LEFT JOIN takimlar t ON k.takim_kodu = t.takim_kodu
+        ORDER BY k.kayit_tarihi DESC
+    """).fetchall()
+
+    takimlar = db.execute("""
+        SELECT t.*, k.ad as lider_ady
+        FROM takimlar t
+        JOIN katilimcilar k ON t.lider_referans = k.referans_kodu
+        ORDER BY t.id DESC
+    """).fetchall()
+
+    return render_template('admin_panel.html', stats=stats, katilimcilar=katilimcilar, takimlar=takimlar, sifre=sifre)
+
+@app.route('/api/admin-onayla', methods=['POST'])
+def api_admin_onayla():
+    data = request.get_json()
+    ref_code = data.get('referans_kodu', '')
+    sifre = data.get('sifre', '')
+    admin_sifre = os.environ.get('ADMIN_SIFRE', 'admin123')
+
+    if sifre != admin_sifre:
+        return jsonify({'success': False, 'message': 'Parol nadogry!'})
+
+    db = get_db()
+    katilimci = db.execute(
+        'SELECT * FROM katilimcilar WHERE referans_kodu = ?', (ref_code,)
+    ).fetchone()
+
+    if not katilimci:
+        return jsonify({'success': False, 'message': 'Katylyjy tapylmady!'})
+
+    onay_tarihi = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    db.execute("""
+        UPDATE katilimcilar SET admin_onay = 1, onay_tarihi = ? WHERE referans_kodu = ?
+    """, (onay_tarihi, ref_code))
+    db.commit()
+
+    msg = f"""✅ <b>TASSYKLANDY!</b>
+
+👤 Ady: <b>{katilimci['ad']}</b>
+🔑 Referans kody: <code>{ref_code}</code>
+📅 Tassyklama senesi: {onay_tarihi}
+
+✅ <b>Katylyjy ustunlikli tassyklandy!</b>"""
+
+    send_telegram_message(msg)
+
+    return jsonify({'success': True, 'message': 'Katylyjy tassyklandy!'})
+
+@app.route('/api/admin-reddet', methods=['POST'])
+def api_admin_reddet():
+    data = request.get_json()
+    ref_code = data.get('referans_kodu', '')
+    sifre = data.get('sifre', '')
+    admin_sifre = os.environ.get('ADMIN_SIFRE', 'admin123')
+
+    if sifre != admin_sifre:
+        return jsonify({'success': False, 'message': 'Parol nadogry!'})
+
+    db = get_db()
+    db.execute('UPDATE katilimcilar SET admin_onay = 2 WHERE referans_kodu = ?', (ref_code,))
+    db.commit()
+
+    return jsonify({'success': True, 'message': 'Katylyjy ret edildi!'})
+
+@app.route('/api/katilimci/<ref_code>')
+def api_katilimci(ref_code):
+    db = get_db()
+    katilimci = db.execute("""
+        SELECT k.*, t.takim_adi 
+        FROM katilimcilar k
+        LEFT JOIN takimlar t ON k.takim_kodu = t.takim_kodu
+        WHERE k.referans_kodu = ?
+    """, (ref_code,)).fetchone()
+
+    if not katilimci:
+        return jsonify({'success': False})
+
+    return jsonify({
+        'success': True,
+        'katilimci': dict(katilimci)
+    })
+
+if __name__ == '__main__':
+    init_db()
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

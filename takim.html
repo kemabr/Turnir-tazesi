@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toparym - PUBG Turnuvasy</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-animation">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="container">
+        <header class="form-header">
+            <a href="/profil/{{ katilimci['referans_kodu'] }}" class="back-btn">← Yza</a>
+            <h1>👥 TOPAR</h1>
+            <p>Topar düz ýa-da dostuňyň toparyna goşul</p>
+        </header>
+
+        <div class="team-tabs">
+            <button class="tab-btn active" onclick="showTab('create')">➕ Topar Düz</button>
+            <button class="tab-btn" onclick="showTab('join')">🔗 Topara Goşul</button>
+        </div>
+
+        <div id="create-tab" class="tab-content active">
+            <form id="create-team-form" class="team-form">
+                <input type="hidden" id="lider_ref" value="{{ katilimci['referans_kodu'] }}">
+                <div class="form-group">
+                    <label for="takim_adi">Topar Ady</label>
+                    <input type="text" id="takim_adi" placeholder="Mysal: Sniper Squad" required>
+                </div>
+                <div class="team-preview">
+                    <h4>👑 Siz (Lider)</h4>
+                    <p>{{ katilimci['ad'] }} - {{ katilimci['pubg_id'] }}</p>
+                </div>
+                <div class="team-info-box">
+                    <p>➕ Topar düzülensoň, dostlaryňyza topar kodyňyzy beriň.</p>
+                    <p>👥 Her toparda 4 kişi bolup biler.</p>
+                </div>
+                <button type="submit" class="btn-submit">
+                    <span class="btn-text">TOPAR DÜZ</span>
+                </button>
+            </form>
+        </div>
+
+        <div id="join-tab" class="tab-content">
+            <form id="join-team-form" class="team-form">
+                <input type="hidden" id="uye_ref" value="{{ katilimci['referans_kodu'] }}">
+                <div class="form-group">
+                    <label for="takim_kodu">Topar Kody</label>
+                    <input type="text" id="takim_kodu" placeholder="Mysal: TEAM-A3B7C" required>
+                </div>
+                <div class="team-info-box">
+                    <p>🔗 Dostuňyzdan topar kodyny soraň.</p>
+                    <p>✅ Kody girizip "Topara Goşul" düwmesine basyň.</p>
+                </div>
+                <button type="submit" class="btn-submit">
+                    <span class="btn-text">TOPARA GOŞUL</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="team-success-modal">
+        <div class="modal-content success-modal">
+            <div class="success-icon">🎉</div>
+            <h2 id="team-success-title">Ustunlikli!</h2>
+            <p id="team-success-message"></p>
+            <a href="/profil/{{ katilimci['referans_kodu'] }}" class="btn-primary">Profilime Git</a>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+            document.getElementById(tab + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        document.getElementById('create-team-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const data = {
+                lider_ref: document.getElementById('lider_ref').value,
+                takim_adi: document.getElementById('takim_adi').value
+            };
+            try {
+                const response = await fetch('/api/takim-olustur', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('team-success-title').textContent = 'Topar Düzüldi!';
+                    document.getElementById('team-success-message').textContent = 'Topar kodyňyz: ' + result.takim_kodu;
+                    document.getElementById('team-success-modal').style.display = 'flex';
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert('Ýalňyşlyk ýüze çykdy.');
+            }
+        });
+
+        document.getElementById('join-team-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const data = {
+                uye_ref: document.getElementById('uye_ref').value,
+                takim_kodu: document.getElementById('takim_kodu').value
+            };
+            try {
+                const response = await fetch('/api/takima-katil', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('team-success-title').textContent = 'Topara Goşuldyňyz!';
+                    document.getElementById('team-success-message').textContent = result.message;
+                    document.getElementById('team-success-modal').style.display = 'flex';
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert('Ýalňyşlyk ýüze çykdy.');
+            }
+        });
+    </script>
+</body>
+</html>

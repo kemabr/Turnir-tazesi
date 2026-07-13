@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayit Ol - PUBG Turnuvasy</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-animation">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="container">
+        <header class="form-header">
+            <a href="/" class="back-btn">← Yza</a>
+            <h1>📝 KAYIT OL</h1>
+            <p>PUBG Turnuvasy-na gatnaşmak üçin maglumatlaryňyzy dolduryň</p>
+        </header>
+
+        <form id="kayit-form" class="registration-form">
+            <div class="form-group">
+                <label for="ad">👤 Adyňyz</label>
+                <input type="text" id="ad" name="ad" placeholder="Adyňyz we Familiýaňyz" required>
+            </div>
+
+            <div class="form-group">
+                <label for="pubg_id">🆔 PUBG ID</label>
+                <input type="text" id="pubg_id" name="pubg_id" placeholder="Oýun içindeki ID-ňiz" required>
+                <small class="form-hint">PUBG oýunynyň içindeki ID-ňiz (Sazlamalar > Asyl maglumat > ID)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="telefon">📞 Telefon Belgiňiz</label>
+                <input type="tel" id="telefon" name="telefon" placeholder="+993 XX XXX XX XX" required>
+                <small class="form-hint">TMCell belgiňiz (töleg üçin gerekli)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="ulasim">💬 Ulaşmak Üçin</label>
+                <input type="text" id="ulasim" name="ulasim" placeholder="@username yada IMO belgi" required>
+                <small class="form-hint">Telegram, IMO ýa-da başga ulgam (myşal: @pubg_player)</small>
+            </div>
+
+            <div class="form-info-box">
+                <h4>ℹ️ Maglumat</h4>
+                <ul>
+                    <li>Gatnaşyk tölegi: <strong>5 Manat</strong></li>
+                    <li>Töleg usuly: <strong>TMCell SMS (0804)</strong></li>
+                    <li>Kayd bolanyňyzdan soň referans kody alarsyňyz</li>
+                    <li>Telefon belgiňiz töleg bilen deň bolmaly</li>
+                </ul>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submit-btn">
+                <span class="btn-text">KAYIT OL</span>
+                <span class="btn-loader" style="display:none;">⏳</span>
+            </button>
+        </form>
+
+        <!-- Başarılı Kayıt Modal -->
+        <div class="modal" id="success-modal">
+            <div class="modal-content success-modal">
+                <div class="success-icon">🎉</div>
+                <h2>Ustunlikli!</h2>
+                <p>Siz üstunlikli hasaba alyndyňyz!</p>
+
+                <div class="ref-code-box">
+                    <span class="ref-label">Siziň Referans Kodyňyz:</span>
+                    <div class="ref-code" id="ref-code-display">PUBG-XXXXXX</div>
+                    <button class="btn-copy" onclick="copyRefCode()">📋 Nusga Al</button>
+                </div>
+
+                <div class="next-steps">
+                    <p>Indiki ädim: Töleg etmek</p>
+                    <a href="#" id="odeme-link" class="btn-primary">💳 Tölege Git</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('kayit-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const btn = document.getElementById('submit-btn');
+            const btnText = btn.querySelector('.btn-text');
+            const btnLoader = btn.querySelector('.btn-loader');
+
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'inline';
+            btn.disabled = true;
+
+            const data = {
+                ad: document.getElementById('ad').value,
+                pubg_id: document.getElementById('pubg_id').value,
+                telefon: document.getElementById('telefon').value,
+                ulasim: document.getElementById('ulasim').value
+            };
+
+            try {
+                const response = await fetch('/api/kayit-ol', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('ref-code-display').textContent = result.referans_kodu;
+                    document.getElementById('odeme-link').href = '/odeme/' + result.referans_kodu;
+                    document.getElementById('success-modal').style.display = 'flex';
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert('Ýalňyşlyk ýüze çykdy. Gaýtadan synanyşyň.');
+            } finally {
+                btnText.style.display = 'inline';
+                btnLoader.style.display = 'none';
+                btn.disabled = false;
+            }
+        });
+
+        function copyRefCode() {
+            const code = document.getElementById('ref-code-display').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Referans kody nusga alyndy!');
+            });
+        }
+    </script>
+</body>
+</html>

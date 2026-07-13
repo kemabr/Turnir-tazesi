@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Töleg - PUBG Turnuvasy</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-animation">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="container">
+        <header class="form-header">
+            <a href="/" class="back-btn">← Yza</a>
+            <h1>💳 TÖLEG</h1>
+            <p>Gatnaşyk tölegiňizi ediň</p>
+        </header>
+
+        <div class="payment-card">
+            <div class="payment-user-info">
+                <h3>👤 {{ katilimci['ad'] }}</h3>
+                <p>🔑 Referans kody: <strong>{{ katilimci['referans_kodu'] }}</strong></p>
+                <p>📞 {{ katilimci['telefon'] }}</p>
+            </div>
+
+            <div class="payment-details">
+                <div class="payment-row">
+                    <span>Gatnaşyk tölegi:</span>
+                    <strong class="payment-amount">5 Manat</strong>
+                </div>
+                <div class="payment-row">
+                    <span>Töleg usuly:</span>
+                    <strong>TMCell SMS</strong>
+                </div>
+            </div>
+
+            <div class="payment-instructions">
+                <h4>📱 Töleg Talimatlar:</h4>
+                <ol>
+                    <li>Aşakdaky "<strong>Töleg Et</strong>" düwmesine basyň</li>
+                    <li>Telefonyňyzda SMS programmasy açylar</li>
+                    <li>Habar 0804-e ugradyljak we mazmuny taýýar boljak</li>
+                    <li>Diňe "<strong>IBER</strong>" düwmesine basyň</li>
+                    <li>Töleg tamamlandan soň sahypa dolanyň</li>
+                </ol>
+
+                <div class="payment-warning">
+                    <strong>⚠️ Üns beriň:</strong> Töleg etmek üçin <strong>TMCell belgiňizi</strong> ulanyň. Başga belgiden töleg kabul edilmez!
+                </div>
+            </div>
+
+            <a href="sms:0804?body=62237781%205" class="btn-payment-sms">
+                <span>📱</span>
+                <div>
+                    <strong>TÖLEG ET</strong>
+                    <small>SMS programmasy açylar</small>
+                </div>
+            </a>
+
+            <div class="payment-divider">
+                <span>ýa-da</span>
+            </div>
+
+            <div class="payment-manual">
+                <p>El bilen etmek üçin:</p>
+                <p><strong>0804</strong> belgä şu habary ugradyň:</p>
+                <div class="sms-preview">
+                    <code>62237781 5</code>
+                    <button class="btn-copy-small" onclick="copySMS()">📋</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="payment-confirmation" id="confirmation-section">
+            <h3>✅ Töleg Etdiňizmi?</h3>
+            <p>TMCell arkaly töleg etdiňizmi? Aşakdaky düwmä basyp, bize habar beriň.</p>
+            <button class="btn-confirm-payment" id="confirm-btn" onclick="confirmPayment()">
+                <span class="btn-text">TÖLEG ETDIM</span>
+                <span class="btn-loader" style="display:none;">⏳</span>
+            </button>
+        </div>
+
+        <!-- Onay Bekleme Modal -->
+        <div class="modal" id="pending-modal">
+            <div class="modal-content pending-modal">
+                <div class="pending-icon">⏳</div>
+                <h2>Töleg Görnüşi Ugradyldy!</h2>
+                <p>Töleg bildirimiňiz adminlere ugradyldy.</p>
+                <div class="pending-info">
+                    <p>📋 Siziň maglumatlaryňyz:</p>
+                    <ul>
+                        <li>Referans kody: <strong>{{ katilimci['referans_kodu'] }}</strong></li>
+                        <li>Adyňyz: <strong>{{ katilimci['ad'] }}</strong></li>
+                        <li>Töleg: <strong>5 Manat</strong></li>
+                    </ul>
+                </div>
+                <div class="pending-status">
+                    <div class="status-badge waiting">
+                        <span>🕐</span> Admin Tassyklamasy Garaşylýar
+                    </div>
+                </div>
+                <p class="pending-note">Tassyklama wagty: 5-15 minut</p>
+                <a href="/profil/{{ katilimci['referans_kodu'] }}" class="btn-primary">
+                    Profilime Git
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const refCode = '{{ katilimci["referans_kodu"] }}';
+
+        function copySMS() {
+            navigator.clipboard.writeText('62237781 5').then(() => {
+                alert('SMS mazmuny nusga alyndy!');
+            });
+        }
+
+        async function confirmPayment() {
+            const btn = document.getElementById('confirm-btn');
+            const btnText = btn.querySelector('.btn-text');
+            const btnLoader = btn.querySelector('.btn-loader');
+
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'inline';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/odeme-yapildi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ referans_kodu: refCode })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('pending-modal').style.display = 'flex';
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert('Ýalňyşlyk ýüze çykdy. Gaýtadan synanyşyň.');
+            } finally {
+                btnText.style.display = 'inline';
+                btnLoader.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

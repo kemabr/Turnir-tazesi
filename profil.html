@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profilim - PUBG Turnuvasy</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-animation">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="container">
+        <header class="form-header">
+            <a href="/" class="back-btn">← Yza</a>
+            <h1>👤 PROFILIM</h1>
+            <p>Katylma statusyňyz we maglumatlaryňyz</p>
+        </header>
+
+        <!-- Profil Kartı -->
+        <div class="profile-card">
+            <div class="profile-avatar">
+                <span>🎮</span>
+            </div>
+            <div class="profile-info">
+                <h2>{{ katilimci['ad'] }}</h2>
+                <p class="profile-pubg-id">🆔 {{ katilimci['pubg_id'] }}</p>
+                <p class="profile-ref">🔑 {{ katilimci['referans_kodu'] }}</p>
+            </div>
+        </div>
+
+        <!-- Durum Kartı -->
+        <div class="status-card">
+            <h3>📊 Statusym</h3>
+
+            <div class="status-steps">
+                <div class="status-step {% if katilimci['kayit_tarihi'] %}completed{% endif %}">
+                    <div class="step-icon">✅</div>
+                    <div class="step-info">
+                        <span class="step-title">Hasaba Alyndy</span>
+                        <span class="step-date">{{ katilimci['kayit_tarihi'] or 'Garaşylýar' }}</span>
+                    </div>
+                </div>
+
+                <div class="status-step {% if katilimci['odeme_durumu'] == 1 %}completed{% elif katilimci['odeme_durumu'] == 0 %}pending{% endif %}">
+                    <div class="step-icon">{% if katilimci['odeme_durumu'] == 1 %}✅{% else %}⏳{% endif %}</div>
+                    <div class="step-info">
+                        <span class="step-title">Töleg</span>
+                        <span class="step-date">
+                            {% if katilimci['odeme_durumu'] == 1 %}
+                                Töleg edildi ({{ katilimci['odeme_tarihi'] }})
+                            {% else %}
+                                Töleg garaşylýar
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="status-step 
+                    {% if katilimci['admin_onay'] == 1 %}completed
+                    {% elif katilimci['admin_onay'] == 2 %}rejected
+                    {% else %}pending{% endif %}">
+                    <div class="step-icon">
+                        {% if katilimci['admin_onay'] == 1 %}✅
+                        {% elif katilimci['admin_onay'] == 2 %}❌
+                        {% else %}⏳{% endif %}
+                    </div>
+                    <div class="step-info">
+                        <span class="step-title">Admin Tassyklamasy</span>
+                        <span class="step-date">
+                            {% if katilimci['admin_onay'] == 1 %}
+                                Tassyklandy! ({{ katilimci['onay_tarihi'] }})
+                            {% elif katilimci['admin_onay'] == 2 %}
+                                Ret edildi
+                            {% else %}
+                                Garaşylýar
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {% if katilimci['admin_onay'] == 1 %}
+            <div class="status-badge approved">
+                <span>🎉</span> Siz Üstunlikli Tassyklandyňyz!
+            </div>
+            {% elif katilimci['admin_onay'] == 2 %}
+            <div class="status-badge rejected">
+                <span>❌</span> Ret Edildi. Täzeden synanyşyň.
+            </div>
+            {% elif katilimci['odeme_durumu'] == 0 %}
+            <a href="/odeme/{{ katilimci['referans_kodu'] }}" class="btn-primary" style="margin-top: 15px;">
+                💳 Tölege Git
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Takım Bilgileri -->
+        <div class="team-section">
+            <h3>👥 Toparym</h3>
+
+            {% if katilimci['takim_kodu'] %}
+                <div class="team-card">
+                    <div class="team-header">
+                        <h4>{{ katilimci['takim_adi'] or 'Toparym' }}</h4>
+                        <span class="team-code">{{ katilimci['takim_kodu'] }}</span>
+                    </div>
+
+                    <div class="team-members">
+                        <div class="team-member leader">
+                            <span class="member-role">👑 Lider</span>
+                            <span class="member-name">{{ katilimci['ad'] }}</span>
+                            <span class="member-status {% if katilimci['admin_onay'] == 1 %}approved{% else %}pending{% endif %}">
+                                {% if katilimci['admin_onay'] == 1 %}✅{% else %}⏳{% endif %}
+                            </span>
+                        </div>
+
+                        {% for arkadas in takim_arkadaslari %}
+                        <div class="team-member">
+                            <span class="member-role">👤 Agza</span>
+                            <span class="member-name">{{ arkadas['ad'] }}</span>
+                            <span class="member-status {% if arkadas['admin_onay'] == 1 %}approved{% else %}pending{% endif %}">
+                                {% if arkadas['admin_onay'] == 1 %}✅{% else %}⏳{% endif %}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if katilimci['takim_lideri'] == 1 %}
+                    <div class="team-invite">
+                        <p>Dostuňy çagyryp, topara goş:</p>
+                        <div class="invite-code-box">
+                            <code>{{ katilimci['takim_kodu'] }}</code>
+                            <button onclick="copyTeamCode()">📋</button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="team-empty">
+                    <p>Size topar baglanmady.</p>
+                    <div class="team-actions">
+                        <a href="/takim/{{ katilimci['referans_kodu'] }}" class="btn-primary">
+                            👥 Topar Düz / Goşul
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Referans Kodu Paylaş -->
+        <div class="share-section">
+            <h3>🔗 Referans Kodyňyzy Paýlaş</h3>
+            <p>Dostlaryňyza ugradyň:</p>
+            <div class="share-code-box">
+                <code>{{ katilimci['referans_kodu'] }}</code>
+                <button onclick="copyRefCode()">📋 Nusga Al</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyTeamCode() {
+            const code = '{{ katilimci["takim_kodu"] }}';
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Topar kody nusga alyndy!');
+            });
+        }
+
+        function copyRefCode() {
+            const code = '{{ katilimci["referans_kodu"] }}';
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Referans kody nusga alyndy!');
+            });
+        }
+    </script>
+</body>
+</html>
