@@ -101,6 +101,11 @@ def get_stats():
         'onaylanan': stats['onaylanan'] or 0
     }
 
+# Her istekten önce veritabanını kontrol et (Railway'de kalıcı olmadığı için)
+@app.before_request
+def ensure_db():
+    init_db()
+
 # ===================== ROUTES =====================
 
 @app.route('/')
