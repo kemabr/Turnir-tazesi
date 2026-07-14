@@ -2,8 +2,8 @@
 <html lang="tk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Töleg - PUBG Turnuvasy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Töleg - UC Market</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -12,11 +12,13 @@
         <div class="particle"></div>
         <div class="particle"></div>
         <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
     </div>
 
     <div class="container">
         <header class="form-header">
-            <a href="/" class="back-btn">← Yza</a>
+            <a href="/profil/{{ katilimci['referans_kodu'] }}" class="back-btn">← Yza</a>
             <h1>💳 TÖLEG</h1>
             <p>Gatnaşyk tölegiňizi ediň</p>
         </header>
@@ -154,4 +156,9 @@
         }
     </script>
 </body>
-</html>
+</html>'''
+
+with open(os.path.join(output_dir, 'templates', 'odeme.html'), 'w', encoding='utf-8') as f:
+    f.write(odeme_html)
+
+print("odeme.html yazıldı")
