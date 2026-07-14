@@ -550,4 +550,13 @@ def api_admin_sil():
         db.execute('UPDATE katilimcilar SET takim_kodu = NULL, takim_lideri = 0 WHERE takim_kodu = ?',
                    (katilimci['takim_kodu'],))
     
-    db.execute(
+    # Railway'de gunicorn kullanıldığında __main__ bloğu çalışmaz
+# Bu yüzden init_db'yi her istekte kontrol ediyoruz
+@app.before_request
+def ensure_db():
+    init_db()
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
+    
