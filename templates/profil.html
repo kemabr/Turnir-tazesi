@@ -2,8 +2,8 @@
 <html lang="tk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profilim - PUBG Turnuvasy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Profilim - UC Market</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -12,11 +12,40 @@
         <div class="particle"></div>
         <div class="particle"></div>
         <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
     </div>
+
+    <!-- Navbar -->
+    <nav class="top-navbar">
+        <div class="navbar-content">
+            <div class="logo-section">
+                <div class="category-menu">
+                    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+                    <div class="menu-dropdown" id="menu-dropdown">
+                        <a href="/duzgunler"><span>📋</span> Düzgünler</a>
+                        <a href="/bayraklar"><span>🏆</span> Baýraklar</a>
+                        <a href="/turnir-maglumatlary"><span>📅</span> Turnir Maglumatlary</a>
+                        <a href="/takim/{{ katilimci['referans_kodu'] }}"><span>👥</span> Topar Gurmak</a>
+                        <div class="menu-divider"></div>
+                        <a href="/profil/{{ katilimci['referans_kodu'] }}"><span>👤</span> Profilim</a>
+                        <a href="/cikis"><span>🚪</span> Çykyş</a>
+                    </div>
+                </div>
+                <span class="logo-icon">💎</span>
+                <div class="logo-text">
+                    <h1>UC MARKET</h1>
+                    <p>PUBG MOBILE</p>
+                </div>
+            </div>
+            <div class="auth-section">
+                <a href="/cikis" class="btn-auth btn-auth-login">ÇYKYS</a>
+            </div>
+        </div>
+    </nav>
 
     <div class="container">
         <header class="form-header">
-            <a href="/" class="back-btn">← Yza</a>
             <h1>👤 PROFILIM</h1>
             <p>Katylma statusyňyz we maglumatlaryňyz</p>
         </header>
@@ -86,7 +115,7 @@
 
             {% if katilimci['admin_onay'] == 1 %}
             <div class="status-badge approved">
-                <span>🎉</span> Siz Üstunlikli Tassyklandyňyz!
+                <span>🎉</span> Siz Üstünlikli Tassyklandyňyz!
             </div>
             {% elif katilimci['admin_onay'] == 2 %}
             <div class="status-badge rejected">
@@ -114,7 +143,7 @@
                         <div class="team-member leader">
                             <span class="member-role">👑 Lider</span>
                             <span class="member-name">{{ katilimci['ad'] }}</span>
-                            <span class="member-status {% if katilimci['admin_onay'] == 1 %}approved{% else %}pending{% endif %}">
+                            <span class="member-status">
                                 {% if katilimci['admin_onay'] == 1 %}✅{% else %}⏳{% endif %}
                             </span>
                         </div>
@@ -123,7 +152,7 @@
                         <div class="team-member">
                             <span class="member-role">👤 Agza</span>
                             <span class="member-name">{{ arkadas['ad'] }}</span>
-                            <span class="member-status {% if arkadas['admin_onay'] == 1 %}approved{% else %}pending{% endif %}">
+                            <span class="member-status">
                                 {% if arkadas['admin_onay'] == 1 %}✅{% else %}⏳{% endif %}
                             </span>
                         </div>
@@ -164,6 +193,17 @@
     </div>
 
     <script>
+        function toggleMenu() {
+            document.getElementById('menu-dropdown').classList.toggle('active');
+        }
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('menu-dropdown');
+            const toggle = document.querySelector('.menu-toggle');
+            if (!menu.contains(e.target) && e.target !== toggle) {
+                menu.classList.remove('active');
+            }
+        });
+
         function copyTeamCode() {
             const code = '{{ katilimci["takim_kodu"] }}';
             navigator.clipboard.writeText(code).then(() => {
@@ -179,4 +219,9 @@
         }
     </script>
 </body>
-</html>
+</html>'''
+
+with open(os.path.join(output_dir, 'templates', 'profil.html'), 'w', encoding='utf-8') as f:
+    f.write(profil_html)
+
+print("profil.html yazıldı")
