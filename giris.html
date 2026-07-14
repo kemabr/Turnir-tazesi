@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Giriş - UC Market</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-animation">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="giris-container">
+        <div class="giris-box">
+            <div class="giris-logo">💎</div>
+            <h1>UC MARKET</h1>
+            <p>Hasabyňyza giriş ediň</p>
+
+            <form id="giris-form" class="giris-form">
+                <div class="form-group">
+                    <label for="ref_code">🔑 Referans Kodyňyz</label>
+                    <input type="text" id="ref_code" placeholder="Mysal: UC-7X9K2M" required autocomplete="off">
+                </div>
+                <button type="submit" class="btn-submit" id="submit-btn">
+                    <span class="btn-text">GIRIŞ ET</span>
+                    <span class="btn-loader" style="display:none;">⏳</span>
+                </button>
+            </form>
+
+            <div class="giris-alt">
+                <p>Hasabyňyz ýokmy?</p>
+                <a href="/kayit" class="btn-secondary">Registrasiýa</a>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <a href="/" class="back-btn" style="justify-content: center;">← Baş sahypa</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('giris-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            const btnText = btn.querySelector('.btn-text');
+            const btnLoader = btn.querySelector('.btn-loader');
+
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'inline';
+            btn.disabled = true;
+
+            const refCode = document.getElementById('ref_code').value.trim().toUpperCase();
+
+            try {
+                const response = await fetch('/api/giris', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ referans_kodu: refCode })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    window.location.href = result.redirect;
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert('Ýalňyşlyk ýüze çykdy. Gaýtadan synanyşyň.');
+            } finally {
+                btnText.style.display = 'inline';
+                btnLoader.style.display = 'none';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>'''
+
+with open(os.path.join(output_dir, 'templates', 'giris.html'), 'w', encoding='utf-8') as f:
+    f.write(giris_html)
+
+print("giris.html yazıldı")
