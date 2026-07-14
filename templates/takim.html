@@ -2,8 +2,8 @@
 <html lang="tk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toparym - PUBG Turnuvasy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Toparym - UC Market</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -12,7 +12,37 @@
         <div class="particle"></div>
         <div class="particle"></div>
         <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
     </div>
+
+    <!-- Navbar -->
+    <nav class="top-navbar">
+        <div class="navbar-content">
+            <div class="logo-section">
+                <div class="category-menu">
+                    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+                    <div class="menu-dropdown" id="menu-dropdown">
+                        <a href="/duzgunler"><span>📋</span> Düzgünler</a>
+                        <a href="/bayraklar"><span>🏆</span> Baýraklar</a>
+                        <a href="/turnir-maglumatlary"><span>📅</span> Turnir Maglumatlary</a>
+                        <a href="/takim/{{ katilimci['referans_kodu'] }}"><span>👥</span> Topar Gurmak</a>
+                        <div class="menu-divider"></div>
+                        <a href="/profil/{{ katilimci['referans_kodu'] }}"><span>👤</span> Profilim</a>
+                        <a href="/cikis"><span>🚪</span> Çykyş</a>
+                    </div>
+                </div>
+                <span class="logo-icon">💎</span>
+                <div class="logo-text">
+                    <h1>UC MARKET</h1>
+                    <p>PUBG MOBILE</p>
+                </div>
+            </div>
+            <div class="auth-section">
+                <a href="/cikis" class="btn-auth btn-auth-login">ÇYKYS</a>
+            </div>
+        </div>
+    </nav>
 
     <div class="container">
         <header class="form-header">
@@ -75,6 +105,17 @@
     </div>
 
     <script>
+        function toggleMenu() {
+            document.getElementById('menu-dropdown').classList.toggle('active');
+        }
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('menu-dropdown');
+            const toggle = document.querySelector('.menu-toggle');
+            if (!menu.contains(e.target) && e.target !== toggle) {
+                menu.classList.remove('active');
+            }
+        });
+
         function showTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
@@ -133,4 +174,9 @@
         });
     </script>
 </body>
-</html>
+</html>'''
+
+with open(os.path.join(output_dir, 'templates', 'takim.html'), 'w', encoding='utf-8') as f:
+    f.write(takim_html)
+
+print("takim.html yazıldı")
