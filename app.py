@@ -9,7 +9,7 @@ import requests
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'uc-market-gizli-anahtar-2026')
 
-# Railway'de kalıcı veritabanı - /tmp yerine proje dizini
+# Railway'de kalıcı veritabanı - proje dizininde
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE = os.path.join(BASE_DIR, 'ucmarket.db')
 
@@ -34,9 +34,16 @@ def close_connection(exception):
         db.close()
 
 def init_db():
-    with app.app_context():
-        db = get_db()
-        db.execute("""
+    """Veritabanını başlat - tablolar yoksa oluştur"""
+    try:
+        # Doğrudan bağlantı aç (app context olmadan da çalışsın)
+        db = sqlite3.connect(DATABASE)
+        db.row_factory = sqlite3.Row
+        
+        cursor = db.cursor()
+        
+        # Katilimcilar tablosu
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS katilimcilar (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 referans_kodu TEXT UNIQUE NOT NULL,
@@ -53,7 +60,9 @@ def init_db():
                 onay_tarihi TEXT
             )
         """)
-        db.execute("""
+        
+        # Takimlar tablosu
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS takimlar (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 takim_kodu TEXT UNIQUE NOT NULL,
@@ -65,7 +74,9 @@ def init_db():
                 durum INTEGER DEFAULT 0
             )
         """)
-        db.execute("""
+        
+        # Admins tablosu
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS admins (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
@@ -73,12 +84,22 @@ def init_db():
                 created_at TEXT
             )
         """)
+        
         # Varsayılan admin
-        admin_exists = db.execute("SELECT 1 FROM admins WHERE username = 'admin'").fetchone()
-        if not admin_exists:
-            db.execute("INSERT INTO admins (username, password, created_at) VALUES (?, ?, ?)",
-                      ('admin', ADMIN_SIFRE, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        cursor.execute("SELECT 1 FROM admins WHERE username = 'admin'")
+        if not cursor.fetchone():
+            cursor.execute(
+                "INSERT INTO admins (username, password, created_at) VALUES (?, ?, ?)",
+                ('admin', ADMIN_SIFRE, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            )
+        
         db.commit()
+        db.close()
+        print("✅ Veritabanı başlatıldı:", DATABASE)
+        return True
+    except Exception as e:
+        print("❌ Veritabanı hatası:", str(e))
+        return False
 
 def generate_ref_code():
     while True:
@@ -101,23 +122,33 @@ def send_telegram_message(message):
 
 def get_stats():
     db = get_db()
-    stats = db.execute("""
-        SELECT 
-            COUNT(*) as toplam,
-            SUM(CASE WHEN odeme_durumu = 1 THEN 1 ELSE 0 END) as odeme_yapan,
-            SUM(CASE WHEN admin_onay = 1 THEN 1 ELSE 0 END) as onaylanan
-        FROM katilimcilar
-    """).fetchone()
-    return {
-        'toplam': stats['toplam'] or 0,
-        'odeme_yapan': stats['odeme_yapan'] or 0,
-        'onaylanan': stats['onaylanan'] or 0
-    }
+    try:
+        stats = db.execute("""
+            SELECT 
+                COUNT(*) as toplam,
+                SUM(CASE WHEN odeme_durumu = 1 THEN 1 ELSE 0 END) as odeme_yapan,
+                SUM(CASE WHEN admin_onay = 1 THEN 1 ELSE 0 END) as onaylanan
+            FROM katilimcilar
+        """).fetchone()
+        return {
+            'toplam': stats['toplam'] or 0,
+            'odeme_yapan': stats['odeme_yapan'] or 0,
+            'onaylanan': stats['onaylanan'] or 0
+        }
+    except sqlite3.OperationalError:
+        # Tablo yoksa init et ve tekrar dene
+        init_db()
+        return {'toplam': 0, 'odeme_yapan': 0, 'onaylanan': 0}
 
 # ===================== MIDDLEWARE =====================
 @app.before_request
 def ensure_db():
-    init_db()
+    """Her istekten önce tabloların var olduğundan emin ol"""
+    try:
+        db = get_db()
+        db.execute("SELECT 1 FROM katilimcilar LIMIT 1")
+    except sqlite3.OperationalError:
+        init_db()
 
 # ===================== AUTH =====================
 def login_required(f):
@@ -519,43 +550,4 @@ def api_admin_sil():
         db.execute('UPDATE katilimcilar SET takim_kodu = NULL, takim_lideri = 0 WHERE takim_kodu = ?',
                    (katilimci['takim_kodu'],))
     
-    db.execute('DELETE FROM katilimcilar WHERE referans_kodu = ?', (ref_code,))
-    db.commit()
-    return jsonify({'success': True, 'message': 'Katylyjy pozuldy!'})
-
-@app.route('/api/admin-duzenle', methods=['POST'])
-def api_admin_duzenle():
-    if not session.get('admin'):
-        return jsonify({'success': False, 'message': 'Rugsat ýok!'})
-    
-    data = request.get_json()
-    ref_code = data.get('referans_kodu', '')
-    ad = data.get('ad', '').strip()
-    pubg_id = data.get('pubg_id', '').strip()
-    telefon = data.get('telefon', '').strip()
-    ulasim = data.get('ulasim', '').strip()
-
-    db = get_db()
-    db.execute("""
-        UPDATE katilimcilar 
-        SET ad = ?, pubg_id = ?, telefon = ?, ulasim = ?
-        WHERE referans_kodu = ?
-    """, (ad, pubg_id, telefon, ulasim, ref_code))
-    db.commit()
-    return jsonify({'success': True, 'message': 'Maglumatlar üýtgedildi!'})
-
-@app.route('/admin/cikis')
-def admin_cikis():
-    session.pop('admin', None)
-    return redirect(url_for('admin_login'))
-
-# Railway'de gunicorn kullanıldığında __main__ bloğu çalışmaz
-with app.app_context():
-    init_db()
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
-'''
-
-with open(os
+    db.execute(
