@@ -2,8 +2,8 @@
 <html lang="tk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PUBG Turnuvasy 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UC Market - PUBG Mobile UC</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -12,32 +12,64 @@
         <div class="particle"></div>
         <div class="particle"></div>
         <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
     </div>
 
-    <div class="container">
-        <!-- Header -->
-        <header class="main-header">
-            <div class="logo">
-                <span class="logo-icon">🎮</span>
+    <!-- Navbar -->
+    <nav class="top-navbar">
+        <div class="navbar-content">
+            <div class="logo-section">
+                <div class="category-menu">
+                    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+                    <div class="menu-dropdown" id="menu-dropdown">
+                        <a href="/duzgunler"><span>📋</span> Düzgünler</a>
+                        <a href="/bayraklar"><span>🏆</span> Baýraklar</a>
+                        <a href="/turnir-maglumatlary"><span>📅</span> Turnir Maglumatlary</a>
+                        <a href="/takim/{% if user %}{{ user['referans_kodu'] }}{% else %}guest{% endif %}"><span>👥</span> Topar Gurmak</a>
+                        <div class="menu-divider"></div>
+                        {% if user %}
+                        <a href="/profil/{{ user['referans_kodu'] }}"><span>👤</span> Profilim</a>
+                        <a href="/cikis"><span>🚪</span> Çykyş</a>
+                        {% else %}
+                        <a href="/giris"><span>🔑</span> Giriş</a>
+                        <a href="/kayit"><span>📝</span> Registrasiýa</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <span class="logo-icon">💎</span>
                 <div class="logo-text">
-                    <h1>PUBG TURNUVASY</h1>
-                    <p>Season 6 - 2026</p>
+                    <h1>UC MARKET</h1>
+                    <p>PUBG MOBILE</p>
                 </div>
             </div>
-            <div class="prize-badge">
-                <span>🏆</span>
-                <div>
-                    <small>Baýrak</small>
-                    <strong>500 M</strong>
-                </div>
+            <div class="auth-section">
+                {% if user %}
+                <a href="/profil/{{ user['referans_kodu'] }}" class="btn-auth btn-auth-profile">
+                    <div class="profile-avatar-small">🎮</div>
+                    <span>Profil</span>
+                </a>
+                {% else %}
+                <a href="/giris" class="btn-auth btn-auth-login">GIRIŞ</a>
+                <a href="/kayit" class="btn-auth btn-auth-register">REGISTRASIÝA</a>
+                {% endif %}
             </div>
-        </header>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Hero -->
+        <section class="hero-section">
+            <span class="hero-icon">🎮</span>
+            <h1 class="hero-title">PUBG MOBILE UC</h1>
+            <p class="hero-subtitle">Iň arzan we iň ygtybarly UC satyn alma merkezi</p>
+        </section>
 
         <!-- Katılımcı Sayacı -->
         <section class="counter-section">
             <div class="counter-header">
                 <div>
-                    <span class="counter-label">KATYLYJY SANY</span>
+                    <span class="counter-label">GATNAŞYJY SANY</span>
                     <div class="counter-value">
                         <span id="current-count">{{ stats.toplam }}</span>
                         <span class="counter-total">/ 100</span>
@@ -55,8 +87,39 @@
                 {% if stats.toplam >= 100 %}
                     ⚡ TURNIR BAŞLADY! Ähli ýerler doldy!
                 {% else %}
-                    ⚡ 100 katylyja ýetende turnir başlar! Galan: {{ 100 - stats.toplam }} yer
+                    ⚡ 100 gatnaşyja ýetende turnir başlar! Galan: {{ 100 - stats.toplam }} yer
                 {% endif %}
+            </div>
+        </section>
+
+        <!-- UC Paketleri -->
+        <section class="prizes-section">
+            <h2 class="section-title">💎 UC PAKETLERI</h2>
+            <div class="prizes-grid">
+                <div class="prize-card gold">
+                    <div class="prize-rank">💎</div>
+                    <div class="prize-info">
+                        <h3>60 UC</h3>
+                        <p class="prize-amount">5 TMT</p>
+                        <p class="prize-bonus">+ Bonus 0 UC</p>
+                    </div>
+                </div>
+                <div class="prize-card silver">
+                    <div class="prize-rank">💎</div>
+                    <div class="prize-info">
+                        <h3>325 UC</h3>
+                        <p class="prize-amount">25 TMT</p>
+                        <p class="prize-bonus">+ Bonus 25 UC</p>
+                    </div>
+                </div>
+                <div class="prize-card bronze">
+                    <div class="prize-rank">💎</div>
+                    <div class="prize-info">
+                        <h3>660 UC</h3>
+                        <p class="prize-amount">50 TMT</p>
+                        <p class="prize-bonus">+ Bonus 60 UC</p>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -165,89 +228,42 @@
             </div>
         </section>
 
-        <!-- Dostunu Çağır -->
-        <section class="invite-section">
-            <div class="invite-card">
-                <h3>👥 Dostuňy Çagyr</h3>
-                <p>Dostlaryňy çagyryp, bile topar düz! Topar arkaly gatnaşyk has güýçli.</p>
-                <button class="btn-invite" onclick="shareSite()">
-                    <span>🔗</span> Linki Paylaş
-                </button>
-            </div>
-        </section>
-
-        <!-- CTA Buttons -->
+        <!-- CTA -->
         <section class="cta-section">
-            <a href="/kayit" class="btn-primary">
-                📝 KAYIT OL
-            </a>
-            <button class="btn-secondary" onclick="showProfileModal()">
-                🔑 Profilim (Referans Kody)
-            </button>
+            {% if not user %}
+            <a href="/kayit" class="btn-primary">📝 REGISTRASIÝA</a>
+            <a href="/giris" class="btn-secondary">🔑 GIRIŞ ET</a>
+            {% else %}
+            <a href="/profil/{{ user['referans_kodu'] }}" class="btn-primary">👤 PROFILIM</a>
+            <a href="/takim/{{ user['referans_kodu'] }}" class="btn-secondary">👥 TOPARYM</a>
+            {% endif %}
         </section>
 
         <!-- Footer -->
         <footer class="main-footer">
-            <p>© 2026 PUBG Turnuvasy | Ähli hukuklar goralan</p>
+            <p>© 2026 UC Market | PUBG Mobile Turnuvasy</p>
             <p class="footer-location">📍 Türkmenistan</p>
         </footer>
     </div>
 
-    <!-- Profil Modal -->
-    <div class="modal" id="profile-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>🔑 Profilim</h3>
-                <button class="modal-close" onclick="closeProfileModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>Referans kodyňyzy giriziň:</p>
-                <input type="text" id="profile-ref-code" placeholder="Mysal: PUBG-7X9K2M" class="modal-input">
-                <button class="btn-primary" onclick="goToProfile()" style="margin-top: 15px;">
-                    Profili Aç
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        function shareSite() {
-            const shareData = {
-                title: 'PUBG Turnuvasy 2026',
-                text: '🎮 PUBG Turnuvasy-na gatnaş! 500 Manat baýrak, 5 Manat gatnaşyk tölegi. Men hem gatnaşjak!',
-                url: window.location.href
-            };
-
-            if (navigator.share) {
-                navigator.share(shareData);
-            } else {
-                navigator.clipboard.writeText(shareData.text + ' ' + shareData.url).then(() => {
-                    alert('Link nusga alyndy! Dostlaryňa ugrat.');
-                });
+        function toggleMenu() {
+            document.getElementById('menu-dropdown').classList.toggle('active');
+        }
+        
+        // Menü dışına tıklayınca kapat
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('menu-dropdown');
+            const toggle = document.querySelector('.menu-toggle');
+            if (!menu.contains(e.target) && e.target !== toggle) {
+                menu.classList.remove('active');
             }
-        }
-
-        function showProfileModal() {
-            document.getElementById('profile-modal').style.display = 'flex';
-        }
-
-        function closeProfileModal() {
-            document.getElementById('profile-modal').style.display = 'none';
-        }
-
-        function goToProfile() {
-            const code = document.getElementById('profile-ref-code').value.trim();
-            if (code) {
-                window.location.href = '/profil/' + code;
-            } else {
-                alert('Referans kody giriziň!');
-            }
-        }
-
-        // Modal dışına tıklayınca kapat
-        document.getElementById('profile-modal').addEventListener('click', function(e) {
-            if (e.target === this) closeProfileModal();
         });
     </script>
 </body>
-</html>
+</html>'''
+
+with open(os.path.join(output_dir, 'templates', 'index.html'), 'w', encoding='utf-8') as f:
+    f.write(index_html)
+
+print("index.html yazıldı")
