@@ -2,8 +2,8 @@
 <html lang="tk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kayit Ol - PUBG Turnuvasy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Registrasiýa - UC Market</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -12,12 +12,14 @@
         <div class="particle"></div>
         <div class="particle"></div>
         <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
     </div>
 
     <div class="container">
         <header class="form-header">
             <a href="/" class="back-btn">← Yza</a>
-            <h1>📝 KAYIT OL</h1>
+            <h1>📝 REGISTRASIÝA</h1>
             <p>PUBG Turnuvasy-na gatnaşmak üçin maglumatlaryňyzy dolduryň</p>
         </header>
 
@@ -41,8 +43,8 @@
 
             <div class="form-group">
                 <label for="ulasim">💬 Ulaşmak Üçin</label>
-                <input type="text" id="ulasim" name="ulasim" placeholder="@username yada IMO belgi" required>
-                <small class="form-hint">Telegram, IMO ýa-da başga ulgam (myşal: @pubg_player)</small>
+                <input type="text" id="ulasim" name="ulasim" placeholder="@username ýada IMO belgi" required>
+                <small class="form-hint">Telegram, IMO ýa-da başga ulgam</small>
             </div>
 
             <div class="form-info-box">
@@ -56,21 +58,26 @@
             </div>
 
             <button type="submit" class="btn-submit" id="submit-btn">
-                <span class="btn-text">KAYIT OL</span>
+                <span class="btn-text">REGISTRASIÝA</span>
                 <span class="btn-loader" style="display:none;">⏳</span>
             </button>
         </form>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <p style="font-size: 13px; color: var(--text-muted);">Eýýam hasabyňyz barmy?</p>
+            <a href="/giris" class="btn-secondary" style="margin-top: 10px;">GIRIŞ ET</a>
+        </div>
 
         <!-- Başarılı Kayıt Modal -->
         <div class="modal" id="success-modal">
             <div class="modal-content success-modal">
                 <div class="success-icon">🎉</div>
-                <h2>Ustunlikli!</h2>
-                <p>Siz üstunlikli hasaba alyndyňyz!</p>
+                <h2>Üstünlikli!</h2>
+                <p>Siz üstünlikli hasaba alyndyňyz!</p>
 
                 <div class="ref-code-box">
                     <span class="ref-label">Siziň Referans Kodyňyz:</span>
-                    <div class="ref-code" id="ref-code-display">PUBG-XXXXXX</div>
+                    <div class="ref-code" id="ref-code-display">UC-XXXXXX</div>
                     <button class="btn-copy" onclick="copyRefCode()">📋 Nusga Al</button>
                 </div>
 
@@ -134,4 +141,9 @@
         }
     </script>
 </body>
-</html>
+</html>'''
+
+with open(os.path.join(output_dir, 'templates', 'kayit.html'), 'w', encoding='utf-8') as f:
+    f.write(kayit_html)
+
+print("kayit.html yazıldı") 
